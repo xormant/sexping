@@ -3,33 +3,32 @@ import socket
 import time
 import requests
 
-def get_isp(ip):
-    response = requests.get(f"https://api.incolumitas.com/?q={ip}")
-    data = response.json()
-    return data['asn']['org']
+def get_isp(ip): return requests.get(f"https://api.incolumitas.com/?q={ip}").json()['asn']['org']
 
-def tcp_ping(ip, port):
+def tcp_ping(ip, port, isp):
     try:
         start = time.time()
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(5)
+        sock.settimeout(2)
         sock.connect((ip, port))
         end = time.time()
-        response_time = round((end - start) * 1000, 2)
-        isp = get_isp(ip)
-        print(f"Connected to {ip} port={port} isp={isp} time={response_time}ms protocol=TCP")
+        print(f"Connected to {ip} port={port} isp={isp} time={round((end - start) * 1000, 2)}ms protocol=TCP")
         sock.close()
-    except Exception as e:
-        print(f"Error connecting to {ip} port={port}: {e}")
-    time.sleep(1)
+    except:
+        print(f"Host {ip} port={port} Timed Out....")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Ping a TCP port on a remote host.")
-    parser.add_argument("ip", type=str, help="The IP address or hostname to ping.")
-    parser.add_argument("-p", "--port", type=int, default=80, help="The port to ping.")
-    args = parser.parse_args()
+    args = sys.argv
+    if len(args) != 3:
+        print(f"[x] Error, Invalid arguments\nUsage: {argv[0]} <ip> <port>")
+        exit(0)
 
-    print(f"Pinging {args.ip} on port {args.port}...")
+    print(f"Pinging {args[1]} on port {args[2]}...")
 
     while True:
-        tcp_ping(args.ip, args.port)
+        """
+            This thread should take 2 seconds max to respond. If host is offline threads will be stacked 
+            upto like 2-3 per second on the 2 socket timeout delay
+        """
+        threading.Thread(target=tcp_ping, args=(args[1], args[2], get_isp(args[1]),).start()
+        time.sleep(1)
